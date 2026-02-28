@@ -34,6 +34,11 @@ export function activate(context: vscode.ExtensionContext): void {
         openTerminalTab(context);
     });
     context.subscriptions.push(cmd);
+
+    const newTabCmd = vscode.commands.registerCommand('mira-terminal.newTab', () => {
+        openTerminalTab(context);
+    });
+    context.subscriptions.push(newTabCmd);
 }
 
 export function deactivate(): void {}

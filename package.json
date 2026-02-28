@@ -2,7 +2,7 @@
   "name": "mira-terminal",
   "displayName": "Mira Terminal",
   "description": "Opens a terminal in a separate editor tab using node-pty and xterm.js",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "miranovastudios",
   "engines": {
     "vscode": "^1.96.0"
@@ -22,6 +22,11 @@
         "title": "Open Mira Terminal",
         "category": "Mira Terminal",
         "icon": "$(terminal)"
+      },
+      {
+        "command": "mira-terminal.newTab",
+        "title": "New Terminal",
+        "category": "Mira Terminal"
       }
     ],
     "keybindings": [
@@ -43,6 +48,13 @@
         {
           "command": "mira-terminal.open",
           "group": "1_create"
+        }
+      ],
+      "webview/context": [
+        {
+          "command": "mira-terminal.newTab",
+          "when": "webviewId == miraTerminal",
+          "group": "9_mira"
         }
       ]
     },
