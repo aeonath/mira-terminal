@@ -63,12 +63,12 @@
       "properties": {
         "mira-terminal.showCwdInTitle": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "markdownDescription": "Show the current working directory (folder name) in the terminal tab title. e.g. `bash — mira-terminal`"
         },
         "mira-terminal.autoCopySelection": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "markdownDescription": "Automatically copy selected text to the clipboard when text is highlighted in the terminal."
         }
       }
