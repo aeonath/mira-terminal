@@ -7,6 +7,20 @@ import * as fs from 'fs';
 // Cached xterm assets — read from node_modules once per activation
 let cachedAssets: { xtermJs: string; xtermCss: string; fitJs: string } | undefined;
 
+// OSC 7 CWD notification: ESC ] 7 ; file://hostname/path BEL-or-ST
+// Captures the path portion after the first slash following the hostname.
+const OSC7_RE = /\x1b\]7;file:\/\/[^/]*\/([^\x07\x1b]*)(?:\x07|\x1b\\)/;
+
+// PowerShell prompt that emits OSC 7 on every prompt redraw.
+// Uses [char] codes to avoid any quoting issues when passed via -Command.
+//   [char]0x1b = ESC   [char]0x7 = BEL   [char]92 = \   [char]47 = /
+const PWSH_PROMPT_SETUP =
+    'function global:prompt {' +
+    ' $p=(Get-Location).Path;' +
+    ' [Console]::Write([char]0x1b+"]7;file://localhost/"+$p.Replace([char]92,[char]47)+[char]0x7);' +
+    ' "PS $p> "' +
+    '}';
+
 export function activate(context: vscode.ExtensionContext): void {
     // Status bar item — always visible in the lower-left after git info
     const statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0);
@@ -52,14 +66,30 @@ function generateNonce(): string {
 }
 
 function getShellConfig(): { path: string; args: string[] } {
-    const windowsProfiles = vscode.workspace
-        .getConfiguration()
-        .get<Record<string, { path?: string; args?: string[] }>>('terminal.integrated.profiles.windows') ?? {};
+    if (process.platform === 'win32') {
+        const windowsProfiles = vscode.workspace
+            .getConfiguration()
+            .get<Record<string, { path?: string; args?: string[] }>>('terminal.integrated.profiles.windows') ?? {};
 
-    const gitBash = windowsProfiles['Git Bash'];
+        const gitBash = windowsProfiles['Git Bash'];
+        if (gitBash?.path) {
+            return {
+                path: gitBash.path,
+                args: gitBash.args ?? ['--login', '-i'],
+            };
+        }
+
+        // No Git Bash profile — fall back to Windows PowerShell (built-in)
+        return {
+            path: 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe',
+            args: ['-NoLogo'],
+        };
+    }
+
+    // Linux / macOS — use $SHELL, fall back to /bin/bash
     return {
-        path: gitBash?.path ?? 'C:\\Program Files\\Git\\bin\\bash.exe',
-        args: gitBash?.args ?? ['--login', '-i'],
+        path: process.env.SHELL ?? '/bin/bash',
+        args: [],
     };
 }
 
@@ -78,14 +108,35 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
         return;
     }
 
+    const shellName = path.basename(shell.path, path.extname(shell.path)).toLowerCase();
+    const showCwd = vscode.workspace
+        .getConfiguration('mira-terminal')
+        .get<boolean>('showCwdInTitle', true);
+    const autoCopy = vscode.workspace
+        .getConfiguration('mira-terminal')
+        .get<boolean>('autoCopySelection', false);
+
+    // Build spawn args and extra env for CWD tracking
+    let spawnArgs = [...shell.args];
+    const extraEnv: Record<string, string> = {};
+
+    if (showCwd) {
+        if (shellName === 'bash') {
+            // PROMPT_COMMAND runs before every prompt; emits OSC 7 with current $PWD
+            extraEnv['PROMPT_COMMAND'] = 'printf "\\033]7;file://localhost%s\\007" "$PWD"';
+        } else if (shellName === 'powershell' || shellName === 'pwsh') {
+            // Override args to inject the prompt function via -Command
+            spawnArgs = ['-NoLogo', '-NoExit', '-Command', PWSH_PROMPT_SETUP];
+        }
+    }
+
     const panel = vscode.window.createWebviewPanel(
         'miraTerminal',
-        'bash',
+        shellName,
         vscode.ViewColumn.Active,
         {
             enableScripts: true,
             retainContextWhenHidden: true,
-            // Assets are inlined — no localResourceRoots needed
         }
     );
 
@@ -94,13 +145,14 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
     // Spawn PTY in extension host
     let ptyProcess!: pty.IPty;
     try {
-        ptyProcess = pty.spawn(shell.path, shell.args, {
+        ptyProcess = pty.spawn(shell.path, spawnArgs, {
             name: 'xterm-256color',
             cols: 120,
             rows: 30,
             cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir(),
             env: {
                 ...process.env as Record<string, string>,
+                ...extraEnv,
                 TERM: 'xterm-256color',
                 COLORTERM: 'truecolor',
                 LANG: 'C.UTF-8',
@@ -114,8 +166,17 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
         return;
     }
 
-    // PTY output → webview
+    // PTY output → webview; also parse OSC 7 to update the tab title
     const dataHandler = ptyProcess.onData((data: string) => {
+        if (showCwd) {
+            const match = OSC7_RE.exec(data);
+            if (match) {
+                const rawPath = decodeURIComponent(match[1]);
+                const basename = path.basename(rawPath) || rawPath;
+                const sep = (shellName === 'powershell' || shellName === 'pwsh') ? '\\' : '/';
+                panel.title = `${basename}${sep}`;
+            }
+        }
         panel.webview.postMessage({ type: 'data', data });
     });
 
@@ -141,7 +202,7 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
         try { ptyProcess.kill(); } catch { /* already dead */ }
     });
 
-    panel.webview.html = buildWebviewHtml(assets);
+    panel.webview.html = buildWebviewHtml(assets, autoCopy);
 }
 
 // ---------------------------------------------------------------------------
@@ -149,7 +210,7 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
 // webview resource-loading / CSP issues entirely.
 // ---------------------------------------------------------------------------
 
-function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: string }): string {
+function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: string }, autoCopy: boolean): string {
     const nonce = generateNonce();
 
     return `<!DOCTYPE html>
@@ -229,6 +290,15 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
 
     // Key input → PTY
     term.onData(data => vscode.postMessage({ type: 'input', data }));
+
+    // Auto-copy selection to clipboard
+    if (${autoCopy}) {
+      term.onSelectionChange(() => {
+        if (term.hasSelection()) {
+          navigator.clipboard.writeText(term.getSelection()).catch(() => {});
+        }
+      });
+    }
 
     // PTY output → terminal
     window.addEventListener('message', event => {

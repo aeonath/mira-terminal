@@ -2,7 +2,7 @@
   "name": "mira-terminal",
   "displayName": "Mira Terminal",
   "description": "Opens a terminal in a separate editor tab using node-pty and xterm.js",
-  "version": "0.1.4",
+  "version": "0.1.8",
   "publisher": "miranovastudios",
   "engines": {
     "vscode": "^1.96.0"
@@ -13,7 +13,7 @@
   },
   "icon": "icon.png",
   "categories": ["Other"],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -39,6 +39,21 @@
           "icon": "$(terminal)"
         }
       ]
+    },
+    "configuration": {
+      "title": "Mira Terminal",
+      "properties": {
+        "mira-terminal.showCwdInTitle": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Show the current working directory (folder name) in the terminal tab title. e.g. `bash — mira-terminal`"
+        },
+        "mira-terminal.autoCopySelection": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Automatically copy selected text to the clipboard when text is highlighted in the terminal."
+        }
+      }
     }
   },
   "scripts": {

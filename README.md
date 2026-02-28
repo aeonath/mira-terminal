@@ -22,7 +22,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 ## Requirements
 
 - VSCode `^1.96.0`
-- Windows with [Git for Windows](https://git-scm.com/download/win) installed
+- Windows (PowerShell is used by default; [Git for Windows](https://git-scm.com/download/win) optional for Git Bash support)
 
 ---
 
@@ -34,7 +34,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 2. Open VSCode
 3. Open the Extensions view (`Ctrl+Shift+X`)
 4. Click the `...` menu → **Install from VSIX...**
-5. Select the generated `mira-terminal-0.1.4.vsix`
+5. Select the generated `mira-terminal-0.1.8.vsix`
 
 ---
 
@@ -54,9 +54,21 @@ The terminal opens in the active editor column. The shell starts in the current 
 
 ## Shell Configuration
 
-Mira Terminal reads your VSCode settings to determine which shell to launch. Add or update this in your `settings.json`:
+Mira Terminal reads your VSCode `settings.json` to determine which shell to launch.
+
+### Default (no configuration required)
+
+| Platform | Default shell |
+|---|---|
+| Windows | `powershell.exe -NoLogo` |
+| Linux / macOS | `$SHELL` environment variable, falling back to `/bin/bash` |
+
+### Using Git Bash
+
+First, install [Git for Windows](https://git-scm.com/download/win). Then add the following to your VSCode `settings.json` (`Ctrl+Shift+P` → **Preferences: Open User Settings (JSON)**):
 
 ```json
+"terminal.integrated.defaultProfile.windows": "Git Bash",
 "terminal.integrated.profiles.windows": {
     "Git Bash": {
         "path": "C:\\Program Files\\Git\\bin\\bash.exe",
@@ -66,7 +78,7 @@ Mira Terminal reads your VSCode settings to determine which shell to launch. Add
 }
 ```
 
-If the `Git Bash` profile is not found in settings, the extension falls back to the default path above.
+Mira Terminal will pick up the `Git Bash` profile automatically on next launch — no extension restart needed.
 
 ---
 
@@ -90,7 +102,7 @@ npm run build
 This runs:
 1. `npm install` — installs all dependencies (including prebuilt `@lydell/node-pty` binaries for your platform)
 2. `npm run compile` — compiles TypeScript to `out/`
-3. `vsce package` — bundles everything into `mira-terminal-0.1.4.vsix`
+3. `vsce package` — bundles everything into `mira-terminal-0.1.8.vsix`
 
 ### Individual scripts
 
@@ -175,9 +187,56 @@ PTY output flows from the extension host to the webview via `panel.webview.postM
 
 ---
 
+## Extension Settings
+
+Access via **Preferences → Settings → Extensions → Mira Terminal**, or add directly to `settings.json`.
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `mira-terminal.showCwdInTitle` | boolean | `false` | Show the current working directory (folder name) in the terminal tab title |
+| `mira-terminal.autoCopySelection` | boolean | `false` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
+
+### `mira-terminal.showCwdInTitle`
+
+When enabled the tab title updates to `shell — foldername` as you navigate, e.g.:
+
+```
+mira-terminal/    ← bash / Git Bash
+mira-terminal\    ← PowerShell
+```
+
+To enable, add this to your `settings.json`:
+
+```json
+"mira-terminal.showCwdInTitle": true
+```
+
+**How it works:**
+- **Bash / Git Bash** — injects `PROMPT_COMMAND` into the PTY environment so the shell emits an [OSC 7](https://iterm2.com/documentation-escape-codes.html) CWD sequence before each prompt
+- **PowerShell** — overrides the `prompt` function via `-Command` to emit the same OSC 7 sequence
+- The extension host parses the sequence and updates the tab; no terminal output is modified
+
+> **Note for bash users:** If your `.bashrc` or `.bash_profile` sets its own `PROMPT_COMMAND`, it will overwrite the injected one. In that case, append the following to your profile to restore CWD tracking:
+> ```bash
+> PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND; }printf '\033]7;file://localhost%s\007' \"$PWD\""
+> ```
+
+### `mira-terminal.autoCopySelection`
+
+When enabled, any text you highlight in the terminal is immediately copied to the system clipboard — no `Ctrl+C` required. This mirrors the selection-to-clipboard behaviour found in many Linux terminal emulators.
+
+To enable, add this to your `settings.json`:
+
+```json
+"mira-terminal.autoCopySelection": true
+```
+
+---
+
 ## Roadmap
 
-- [ ] Display current working directory in the tab title
+- [x] Display current working directory in the tab title
+- [x] Auto-copy highlighted text to clipboard
 - [ ] Configurable shell profile selection (not just Git Bash)
 - [ ] Configurable font size and color theme
 - [ ] Split terminal panes

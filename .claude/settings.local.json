@@ -3,7 +3,8 @@
     "allow": [
       "WebSearch",
       "WebFetch(domain:www.npmjs.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(npm run:*)"
     ],
     "additionalDirectories": [
       "C:\\Work\\novi"
