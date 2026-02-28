@@ -1,0 +1,46 @@
+{
+  "name": "mira-terminal",
+  "displayName": "Mira Terminal",
+  "description": "Opens a terminal in a separate editor tab using node-pty and xterm.js",
+  "version": "0.1.1",
+  "publisher": "miranova",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mira-terminal.open",
+        "title": "Open Mira Terminal",
+        "category": "Mira Terminal"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "mira-terminal.open",
+        "key": "ctrl+alt+t",
+        "when": "!terminalFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "npx tsc -p ./",
+    "watch": "npx tsc -watch -p ./",
+    "build": "npm install && npm run compile && npx vsce package",
+    "package": "npm run compile && npx vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^3.7.1",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@lydell/node-pty": "^1.0.3",
+    "@xterm/xterm": "^5.5.0",
+    "@xterm/addon-fit": "^0.10.0"
+  }
+}
