@@ -15,6 +15,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 - **Shell from your settings** — reads the `Git Bash` profile from `terminal.integrated.profiles.windows`; falls back to `C:\Program Files\Git\bin\bash.exe`
 - **Multiple tabs** — run the command multiple times to open independent terminal sessions
 - **Context preserved** — switching tabs does not kill the shell (`retainContextWhenHidden`)
+- **Tab restore** — open terminal tabs are remembered and restored (with their last working directory) when VSCode restarts
 - **Status bar button** — terminal icon always visible in the lower-left status bar for one-click access
 
 ---
@@ -34,7 +35,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 2. Open VSCode
 3. Open the Extensions view (`Ctrl+Shift+X`)
 4. Click the `...` menu → **Install from VSIX...**
-5. Select the generated `mira-terminal-0.2.2.vsix`
+5. Select the generated `mira-terminal-0.2.5.vsix`
 
 ---
 
@@ -103,7 +104,7 @@ npm run build
 This runs:
 1. `npm install` — installs all dependencies (including prebuilt `@lydell/node-pty` binaries for your platform)
 2. `npm run compile` — compiles TypeScript to `out/`
-3. `vsce package` — bundles everything into `mira-terminal-0.2.2.vsix`
+3. `vsce package` — bundles everything into `mira-terminal-0.2.5.vsix`
 
 ### Individual scripts
 
@@ -196,7 +197,7 @@ Access via **Preferences → Settings → Extensions → Mira Terminal**, or add
 |---|---|---|---|
 | `mira-terminal.showCwdInTitle` | boolean | `true` | Show the current working directory (folder name) in the terminal tab title |
 | `mira-terminal.autoCopySelection` | boolean | `true` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
-| `mira-terminal.cursorStyle` | string | `"block"` | Cursor shape: `block`, `bar` (pipe \|), or `underline` (insert) |
+| `mira-terminal.cursorStyle` | string | `"block"` | Cursor shape: `block`, `bar` (pipe \|), or `underline` |
 | `mira-terminal.cursorBlink` | boolean | `false` | Enable cursor blinking |
 
 ### `mira-terminal.showCwdInTitle`
@@ -264,6 +265,8 @@ When enabled, the cursor will blink. Disabled by default.
 
 - [x] Display current working directory in the tab title
 - [x] Auto-copy highlighted text to clipboard
+- [x] Configurable cursor style and blink
+- [x] Restore terminal tabs on editor restart
 - [ ] Configurable font size and color theme
 - [ ] Persistent terminal sessions across VSCode restarts
 

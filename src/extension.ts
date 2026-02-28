@@ -41,6 +41,15 @@ export function activate(context: vscode.ExtensionContext): void {
         openTerminalTab(context);
     });
     context.subscriptions.push(newTabCmd);
+
+    // Restore terminal tabs when the editor restarts
+    context.subscriptions.push(
+        vscode.window.registerWebviewPanelSerializer('miraTerminal', {
+            async deserializeWebviewPanel(panel: vscode.WebviewPanel, state: { cwd?: string } | undefined) {
+                attachTerminalToPanel(context, panel, state?.cwd);
+            },
+        })
+    );
 }
 
 export function deactivate(): void {}
@@ -61,6 +70,23 @@ function loadAssets(extensionPath: string): { xtermJs: string; xtermCss: string;
         };
     }
     return cachedAssets;
+}
+
+// Resolve a CWD saved from a previous session into a path the PTY can use.
+// Git Bash OSC 7 emits Unix-style paths like 'c/Work/mira-terminal' (lowercase
+// drive, no leading slash). Convert those to 'C:/Work/mira-terminal' on Windows.
+// Falls back to the workspace folder / home dir if the path no longer exists.
+function resolveSavedCwd(savedCwd: string | undefined): string {
+    const fallback = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir();
+    if (!savedCwd) { return fallback; }
+
+    let resolved = savedCwd;
+    if (process.platform === 'win32') {
+        const m = /^([a-zA-Z])\/(.+)$/.exec(resolved);
+        if (m) { resolved = `${m[1].toUpperCase()}:/${m[2]}`; }
+    }
+
+    return fs.existsSync(resolved) ? resolved : fallback;
 }
 
 function generateNonce(): string {
@@ -105,6 +131,23 @@ function getShellConfig(): { path: string; args: string[] } {
 // ---------------------------------------------------------------------------
 
 function openTerminalTab(context: vscode.ExtensionContext): void {
+    const panel = vscode.window.createWebviewPanel(
+        'miraTerminal',
+        'Terminal',
+        vscode.ViewColumn.Active,
+        {
+            enableScripts: true,
+            retainContextWhenHidden: true,
+        }
+    );
+    attachTerminalToPanel(context, panel);
+}
+
+function attachTerminalToPanel(
+    context: vscode.ExtensionContext,
+    panel: vscode.WebviewPanel,
+    savedCwd?: string
+): void {
     const shell = getShellConfig();
 
     let assets: { xtermJs: string; xtermCss: string; fitJs: string };
@@ -112,6 +155,7 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
         assets = loadAssets(context.extensionPath);
     } catch (err) {
         vscode.window.showErrorMessage(`Mira Terminal: failed to load xterm assets: ${err}`);
+        panel.dispose();
         return;
     }
 
@@ -129,31 +173,22 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
         .getConfiguration('mira-terminal')
         .get<boolean>('cursorBlink', false);
 
+    panel.title = shellName;
+    panel.iconPath = new vscode.ThemeIcon('terminal');
+
     // Build spawn args and extra env for CWD tracking
     let spawnArgs = [...shell.args];
     const extraEnv: Record<string, string> = {};
 
     if (showCwd) {
         if (shellName === 'bash') {
-            // PROMPT_COMMAND runs before every prompt; emits OSC 7 with current $PWD
             extraEnv['PROMPT_COMMAND'] = 'printf "\\033]7;file://localhost%s\\007" "$PWD"';
         } else if (shellName === 'powershell' || shellName === 'pwsh') {
-            // Override args to inject the prompt function via -Command
             spawnArgs = ['-NoLogo', '-NoExit', '-Command', PWSH_PROMPT_SETUP];
         }
     }
 
-    const panel = vscode.window.createWebviewPanel(
-        'miraTerminal',
-        shellName,
-        vscode.ViewColumn.Active,
-        {
-            enableScripts: true,
-            retainContextWhenHidden: true,
-        }
-    );
-
-    panel.iconPath = new vscode.ThemeIcon('terminal');
+    const startCwd = resolveSavedCwd(savedCwd);
 
     // Spawn PTY in extension host
     let ptyProcess!: pty.IPty;
@@ -162,7 +197,7 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
             name: 'xterm-256color',
             cols: 120,
             rows: 30,
-            cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? os.homedir(),
+            cwd: startCwd,
             env: {
                 ...process.env as Record<string, string>,
                 ...extraEnv,
@@ -188,6 +223,7 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
                 const basename = path.basename(rawPath) || rawPath;
                 const sep = (shellName === 'powershell' || shellName === 'pwsh') ? '\\' : '/';
                 panel.title = `${basename}${sep}`;
+                panel.webview.postMessage({ type: 'cwd', path: rawPath });
             }
         }
         panel.webview.postMessage({ type: 'data', data });
@@ -332,6 +368,8 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
         term.write('\\r\\n\\x1b[90m[process exited]\\x1b[0m\\r\\n');
       } else if (msg.type === 'focus') {
         term.focus();
+      } else if (msg.type === 'cwd') {
+        vscode.setState({ cwd: msg.path });
       }
     });
 
