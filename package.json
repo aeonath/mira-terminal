@@ -1,7 +1,7 @@
 {
   "name": "mira-terminal",
   "displayName": "Mira Terminal",
-  "description": "Opens a terminal in a separate editor tab using node-pty and xterm.js",
+  "description": "Clean tabbed terminal for running Claude Code or whatever.",
   "version": "0.2.1",
   "publisher": "miranovastudios",
   "engines": {

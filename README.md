@@ -194,8 +194,8 @@ Access via **Preferences → Settings → Extensions → Mira Terminal**, or add
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| `mira-terminal.showCwdInTitle` | boolean | `false` | Show the current working directory (folder name) in the terminal tab title |
-| `mira-terminal.autoCopySelection` | boolean | `false` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
+| "mira-terminal.showCwdInTitle" | boolean | `false` | Show the current working directory (folder name) in the terminal tab title |
+| "mira-terminal.autoCopySelection" | boolean | `false` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
 
 ### `mira-terminal.showCwdInTitle`
 
@@ -238,9 +238,7 @@ To enable, add this to your `settings.json`:
 
 - [x] Display current working directory in the tab title
 - [x] Auto-copy highlighted text to clipboard
-- [ ] Configurable shell profile selection (not just Git Bash)
 - [ ] Configurable font size and color theme
-- [ ] Split terminal panes
 - [ ] Persistent terminal sessions across VSCode restarts
 
 ---

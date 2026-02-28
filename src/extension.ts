@@ -1,3 +1,5 @@
+// Copyright (c) 2026 MiraNova Studios
+
 import * as vscode from 'vscode';
 import * as pty from '@lydell/node-pty';
 import * as path from 'path';
