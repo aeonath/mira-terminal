@@ -1,6 +1,6 @@
 # Mira Terminal
 
-**Version 0.1.1** | VSCode Extension | MiraNova Studios
+VSCode Extension | MiraNova Studios
 
 A VSCode extension that opens a full terminal in a dedicated editor tab — powered by a real PTY via `node-pty` and rendered with `xterm.js`. Designed to play well with vim, TUI applications, and anything that needs a proper pseudo-terminal.
 
@@ -15,6 +15,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 - **Shell from your settings** — reads the `Git Bash` profile from `terminal.integrated.profiles.windows`; falls back to `C:\Program Files\Git\bin\bash.exe`
 - **Multiple tabs** — run the command multiple times to open independent terminal sessions
 - **Context preserved** — switching tabs does not kill the shell (`retainContextWhenHidden`)
+- **Status bar button** — terminal icon always visible in the lower-left status bar for one-click access
 
 ---
 
@@ -29,21 +30,11 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 
 ### From VSIX (recommended for local builds)
 
-1. Build the `.vsix` package (see [Building](#building) below)
+1. Build the `.vsix` package (npm run build)
 2. Open VSCode
 3. Open the Extensions view (`Ctrl+Shift+X`)
 4. Click the `...` menu → **Install from VSIX...**
-5. Select the generated `mira-terminal-0.1.1.vsix`
-
-### From source (development)
-
-```bash
-git clone <repo-url>
-cd mira-terminal
-npm run build
-```
-
-Then install the resulting `.vsix` as above.
+5. Select the generated `mira-terminal-0.1.4.vsix`
 
 ---
 
@@ -52,6 +43,7 @@ Then install the resulting `.vsix` as above.
 | Action | How |
 |---|---|
 | Open a terminal tab | `Ctrl+Alt+T` |
+| Open via status bar | Click `$(terminal)` icon in the lower-left status bar |
 | Open via command palette | `Ctrl+Shift+P` → **Mira Terminal: Open Mira Terminal** |
 | Open another terminal | Run the command again — each invocation is an independent session |
 | Close the terminal | Close the tab or type `exit` in the shell |
@@ -98,7 +90,7 @@ npm run build
 This runs:
 1. `npm install` — installs all dependencies (including prebuilt `@lydell/node-pty` binaries for your platform)
 2. `npm run compile` — compiles TypeScript to `out/`
-3. `vsce package` — bundles everything into `mira-terminal-0.1.1.vsix`
+3. `vsce package` — bundles everything into `mira-terminal-0.1.4.vsix`
 
 ### Individual scripts
 
@@ -151,7 +143,7 @@ mira-terminal/
 └─────────────────────────────────────────────────────┘
 ```
 
-PTY output flows from the extension host to the webview via `panel.webview.postMessage()`. Key input and resize events flow back via `webview.onDidReceiveMessage`. xterm.js and its addon are served from the extension's own `node_modules` using `webview.asWebviewUri()` — no CDN, fully CSP-compliant.
+PTY output flows from the extension host to the webview via `panel.webview.postMessage()`. Key input and resize events flow back via `webview.onDidReceiveMessage`. xterm.js and its addon are read from `node_modules` using `fs.readFileSync` at panel creation time and **inlined directly into the HTML** with a per-session nonce — no external resource loading, no `localResourceRoots`, no CSP source-matching issues.
 
 ---
 
