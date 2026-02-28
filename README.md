@@ -194,8 +194,8 @@ Access via **Preferences → Settings → Extensions → Mira Terminal**, or add
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| "mira-terminal.showCwdInTitle" | boolean | `false` | Show the current working directory (folder name) in the terminal tab title |
-| "mira-terminal.autoCopySelection" | boolean | `false` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
+| "mira-terminal.showCwdInTitle" | boolean | `true` | Show the current working directory (folder name) in the terminal tab title |
+| "mira-terminal.autoCopySelection" | boolean | `true` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
 
 ### `mira-terminal.showCwdInTitle`
 
