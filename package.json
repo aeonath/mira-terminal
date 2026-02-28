@@ -2,7 +2,7 @@
   "name": "mira-terminal",
   "displayName": "Mira Terminal",
   "description": "Clean tabbed terminal for running Claude Code or whatever.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "miranovastudios",
   "engines": {
     "vscode": "^1.96.0"
@@ -70,6 +70,22 @@
           "type": "boolean",
           "default": true,
           "markdownDescription": "Automatically copy selected text to the clipboard when text is highlighted in the terminal."
+        },
+        "mira-terminal.cursorStyle": {
+          "type": "string",
+          "enum": ["block", "bar", "underline"],
+          "enumDescriptions": [
+            "Block cursor (default)",
+            "Blinking pipe | cursor",
+            "Insert (underline) cursor"
+          ],
+          "default": "block",
+          "markdownDescription": "The cursor style to use in the terminal."
+        },
+        "mira-terminal.cursorBlink": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Enable cursor blinking in the terminal."
         }
       }
     }

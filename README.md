@@ -34,7 +34,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 2. Open VSCode
 3. Open the Extensions view (`Ctrl+Shift+X`)
 4. Click the `...` menu → **Install from VSIX...**
-5. Select the generated `mira-terminal-0.2.1.vsix`
+5. Select the generated `mira-terminal-0.2.2.vsix`
 
 ---
 
@@ -103,7 +103,7 @@ npm run build
 This runs:
 1. `npm install` — installs all dependencies (including prebuilt `@lydell/node-pty` binaries for your platform)
 2. `npm run compile` — compiles TypeScript to `out/`
-3. `vsce package` — bundles everything into `mira-terminal-0.2.1.vsix`
+3. `vsce package` — bundles everything into `mira-terminal-0.2.2.vsix`
 
 ### Individual scripts
 
@@ -194,8 +194,10 @@ Access via **Preferences → Settings → Extensions → Mira Terminal**, or add
 
 | Setting | Type | Default | Description |
 |---|---|---|---|
-| "mira-terminal.showCwdInTitle" | boolean | `true` | Show the current working directory (folder name) in the terminal tab title |
-| "mira-terminal.autoCopySelection" | boolean | `true` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
+| `mira-terminal.showCwdInTitle` | boolean | `true` | Show the current working directory (folder name) in the terminal tab title |
+| `mira-terminal.autoCopySelection` | boolean | `true` | Automatically copy selected text to the clipboard when text is highlighted in the terminal |
+| `mira-terminal.cursorStyle` | string | `"block"` | Cursor shape: `block`, `bar` (pipe \|), or `underline` (insert) |
+| `mira-terminal.cursorBlink` | boolean | `false` | Enable cursor blinking |
 
 ### `mira-terminal.showCwdInTitle`
 
@@ -230,6 +232,30 @@ To enable, add this to your `settings.json`:
 
 ```json
 "mira-terminal.autoCopySelection": true
+```
+
+### `mira-terminal.cursorStyle`
+
+Controls the shape of the terminal cursor. Three styles are available:
+
+| Value | Appearance |
+|---|---|
+| `"block"` | Solid block cursor (default) |
+| `"bar"` | Pipe `\|` cursor |
+| `"underline"` | Underline (insert) cursor |
+
+To set via `settings.json`:
+
+```json
+"mira-terminal.cursorStyle": "bar"
+```
+
+### `mira-terminal.cursorBlink`
+
+When enabled, the cursor will blink. Disabled by default.
+
+```json
+"mira-terminal.cursorBlink": true
 ```
 
 ---

@@ -122,6 +122,12 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
     const autoCopy = vscode.workspace
         .getConfiguration('mira-terminal')
         .get<boolean>('autoCopySelection', false);
+    const cursorStyle = vscode.workspace
+        .getConfiguration('mira-terminal')
+        .get<string>('cursorStyle', 'block');
+    const cursorBlink = vscode.workspace
+        .getConfiguration('mira-terminal')
+        .get<boolean>('cursorBlink', false);
 
     // Build spawn args and extra env for CWD tracking
     let spawnArgs = [...shell.args];
@@ -202,6 +208,13 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
         }
     });
 
+    // Re-focus the terminal when the user switches back to this tab
+    panel.onDidChangeViewState(e => {
+        if (e.webviewPanel.active) {
+            panel.webview.postMessage({ type: 'focus' });
+        }
+    });
+
     // Cleanup on panel close
     panel.onDidDispose(() => {
         dataHandler.dispose();
@@ -209,7 +222,7 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
         try { ptyProcess.kill(); } catch { /* already dead */ }
     });
 
-    panel.webview.html = buildWebviewHtml(assets, autoCopy);
+    panel.webview.html = buildWebviewHtml(assets, autoCopy, cursorStyle, cursorBlink);
 }
 
 // ---------------------------------------------------------------------------
@@ -217,7 +230,7 @@ function openTerminalTab(context: vscode.ExtensionContext): void {
 // webview resource-loading / CSP issues entirely.
 // ---------------------------------------------------------------------------
 
-function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: string }, autoCopy: boolean): string {
+function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: string }, autoCopy: boolean, cursorStyle: string, cursorBlink: boolean): string {
     const nonce = generateNonce();
 
     return `<!DOCTYPE html>
@@ -250,7 +263,8 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
     const container = document.getElementById('terminal-container');
 
     const term = new Terminal({
-      cursorBlink: true,
+      cursorBlink: ${cursorBlink},
+      cursorStyle: '${cursorStyle}',
       fontSize: 14,
       fontFamily: 'Consolas, "Courier New", monospace',
       theme: {
@@ -316,8 +330,18 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
         term.write(msg.data);
       } else if (msg.type === 'exit') {
         term.write('\\r\\n\\x1b[90m[process exited]\\x1b[0m\\r\\n');
+      } else if (msg.type === 'focus') {
+        term.focus();
       }
     });
+
+    // Re-focus when VS Code gives the webview iframe focus (tab switch,
+    // command palette dismissed, sidebar click then back, etc.)
+    window.addEventListener('focus', () => term.focus());
+
+    // Fallback: any click on the container area that xterm doesn't capture
+    // (scrollbar, padding) should still pull focus into the terminal.
+    container.addEventListener('mousedown', () => term.focus());
 
     // Keep terminal sized to the panel
     const ro = new ResizeObserver(() => fitAndNotify());
