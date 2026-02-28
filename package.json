@@ -64,7 +64,7 @@
         "mira-terminal.showCwdInTitle": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Show the current working directory (folder name) in the terminal tab title. e.g. `bash — mira-terminal`"
+          "markdownDescription": "Show the current working directory (folder name) in the terminal tab title. e.g. `[icon] mira-terminal/`"
         },
         "mira-terminal.autoCopySelection": {
           "type": "boolean",
