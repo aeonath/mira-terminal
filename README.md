@@ -20,7 +20,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 
 ## Requirements
 
-- VSCode `^1.85.0`
+- VSCode `^1.96.0`
 - Windows with [Git for Windows](https://git-scm.com/download/win) installed
 
 ---
