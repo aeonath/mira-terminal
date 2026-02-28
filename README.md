@@ -34,7 +34,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 2. Open VSCode
 3. Open the Extensions view (`Ctrl+Shift+X`)
 4. Click the `...` menu → **Install from VSIX...**
-5. Select the generated `mira-terminal-0.1.8.vsix`
+5. Select the generated `mira-terminal-0.2.0.vsix`
 
 ---
 
@@ -45,6 +45,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 | Open a terminal tab | `Ctrl+Alt+T` |
 | Open via status bar | Click `$(terminal)` icon in the lower-left status bar |
 | Open via command palette | `Ctrl+Shift+P` → **Mira Terminal: Open Mira Terminal** |
+| Open from terminal panel | Click `$(terminal)` in the integrated terminal title bar, or right-click a terminal tab |
 | Open another terminal | Run the command again — each invocation is an independent session |
 | Close the terminal | Close the tab or type `exit` in the shell |
 
@@ -102,7 +103,7 @@ npm run build
 This runs:
 1. `npm install` — installs all dependencies (including prebuilt `@lydell/node-pty` binaries for your platform)
 2. `npm run compile` — compiles TypeScript to `out/`
-3. `vsce package` — bundles everything into `mira-terminal-0.1.8.vsix`
+3. `vsce package` — bundles everything into `mira-terminal-0.2.0.vsix`
 
 ### Individual scripts
 
