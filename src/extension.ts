@@ -198,19 +198,22 @@ function attachTerminalToPanel(
             cols: 120,
             rows: 30,
             cwd: startCwd,
-            env: {
-                ...process.env as Record<string, string>,
-                ...extraEnv,
-                TERM: 'xterm-256color',
-                COLORTERM: 'truecolor',
-                LANG: 'C.UTF-8',
-                LC_ALL: 'C.UTF-8',
-                LESSCHARSET: 'utf-8',
-                // VS Code sets these to make Electron run as plain Node.js;
-                // remove them so child Electron apps (e.g. Novi) work correctly
-                ELECTRON_RUN_AS_NODE: '',
-                ELECTRON_NO_ASAR: '',
-            },
+            env: (() => {
+                // VS Code sets ELECTRON_RUN_AS_NODE and ELECTRON_NO_ASAR which
+                // cause child Electron apps to run as plain Node.js. Delete them.
+                const env: Record<string, string> = {
+                    ...process.env as Record<string, string>,
+                    ...extraEnv,
+                    TERM: 'xterm-256color',
+                    COLORTERM: 'truecolor',
+                    LANG: 'C.UTF-8',
+                    LC_ALL: 'C.UTF-8',
+                    LESSCHARSET: 'utf-8',
+                };
+                delete env['ELECTRON_RUN_AS_NODE'];
+                delete env['ELECTRON_NO_ASAR'];
+                return env;
+            })(),
         });
     } catch (err) {
         vscode.window.showErrorMessage(`Mira Terminal: failed to spawn shell: ${err}`);
