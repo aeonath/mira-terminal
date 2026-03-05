@@ -206,6 +206,10 @@ function attachTerminalToPanel(
                 LANG: 'C.UTF-8',
                 LC_ALL: 'C.UTF-8',
                 LESSCHARSET: 'utf-8',
+                // VS Code sets these to make Electron run as plain Node.js;
+                // remove them so child Electron apps (e.g. Novi) work correctly
+                ELECTRON_RUN_AS_NODE: '',
+                ELECTRON_NO_ASAR: '',
             },
         });
     } catch (err) {
