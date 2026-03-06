@@ -2,7 +2,7 @@
   "name": "mira-terminal",
   "displayName": "Mira Terminal",
   "description": "Clean tabbed terminal for running Claude Code or whatever.",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "publisher": "miranovastudios",
   "engines": {
     "vscode": "^1.96.0"
@@ -12,8 +12,12 @@
     "url": "https://github.com/aeonath/mira-terminal"
   },
   "icon": "icon.png",
-  "categories": ["Other"],
-  "activationEvents": ["onStartupFinished"],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -73,7 +77,11 @@
         },
         "mira-terminal.cursorStyle": {
           "type": "string",
-          "enum": ["block", "bar", "underline"],
+          "enum": [
+            "block",
+            "bar",
+            "underline"
+          ],
           "enumDescriptions": [
             "Block cursor (default)",
             "Blinking pipe | cursor",
@@ -104,7 +112,8 @@
   },
   "dependencies": {
     "@lydell/node-pty": "^1.0.3",
-    "@xterm/xterm": "^5.5.0",
-    "@xterm/addon-fit": "^0.10.0"
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^5.5.0"
   }
 }

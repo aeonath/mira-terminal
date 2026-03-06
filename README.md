@@ -10,7 +10,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 
 - **Terminal as an editor tab** — opens alongside your files in the main editor area, not the bottom panel
 - **Full PTY support** — real pseudo-terminal via `@lydell/node-pty`; vim, htop, and other TUI apps work correctly
-- **xterm.js rendering** — `xterm-256color`, true color, 10,000 line scrollback
+- **xterm.js rendering** — `xterm-256color`, true color, 10,000 line scrollback, GPU-accelerated via WebGL
 - **Auto-resize** — terminal cols/rows stay in sync with the panel size via `ResizeObserver` + `SIGWINCH`
 - **Shell from your settings** — reads the `Git Bash` profile from `terminal.integrated.profiles.windows`; falls back to `C:\Program Files\Git\bin\bash.exe`
 - **Multiple tabs** — run the command multiple times to open independent terminal sessions
@@ -35,7 +35,7 @@ A VSCode extension that opens a full terminal in a dedicated editor tab — powe
 2. Open VSCode
 3. Open the Extensions view (`Ctrl+Shift+X`)
 4. Click the `...` menu → **Install from VSIX...**
-5. Select the generated `mira-terminal-0.2.5.vsix`
+5. Select the generated `mira-terminal-0.2.7.vsix`
 
 ---
 
@@ -104,7 +104,7 @@ npm run build
 This runs:
 1. `npm install` — installs all dependencies (including prebuilt `@lydell/node-pty` binaries for your platform)
 2. `npm run compile` — compiles TypeScript to `out/`
-3. `vsce package` — bundles everything into `mira-terminal-0.2.5.vsix`
+3. `vsce package` — bundles everything into `mira-terminal-0.2.7.vsix`
 
 ### Individual scripts
 
@@ -177,6 +177,7 @@ PTY output flows from the extension host to the webview via `panel.webview.postM
 | `@lydell/node-pty` | `^1.0.3` | Pseudo-terminal — spawns and manages the shell process |
 | `@xterm/xterm` | `^5.5.0` | Terminal renderer in the webview |
 | `@xterm/addon-fit` | `^0.10.0` | Resizes the xterm instance to fit its container |
+| `@xterm/addon-webgl` | `^0.19.0` | GPU-accelerated terminal rendering via WebGL |
 
 ### Dev dependencies
 

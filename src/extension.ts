@@ -7,7 +7,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 
 // Cached xterm assets — read from node_modules once per activation
-let cachedAssets: { xtermJs: string; xtermCss: string; fitJs: string } | undefined;
+let cachedAssets: { xtermJs: string; xtermCss: string; fitJs: string; webglJs: string } | undefined;
 
 // OSC 7 CWD notification: ESC ] 7 ; file://hostname/path BEL-or-ST
 // Captures the path portion after the first slash following the hostname.
@@ -58,7 +58,7 @@ export function deactivate(): void {}
 // Helpers
 // ---------------------------------------------------------------------------
 
-function loadAssets(extensionPath: string): { xtermJs: string; xtermCss: string; fitJs: string } {
+function loadAssets(extensionPath: string): { xtermJs: string; xtermCss: string; fitJs: string; webglJs: string } {
     if (!cachedAssets) {
         const read = (...parts: string[]) =>
             fs.readFileSync(path.join(extensionPath, 'node_modules', ...parts), 'utf8');
@@ -67,6 +67,7 @@ function loadAssets(extensionPath: string): { xtermJs: string; xtermCss: string;
             xtermJs:  read('@xterm', 'xterm', 'lib', 'xterm.js'),
             xtermCss: read('@xterm', 'xterm', 'css', 'xterm.css'),
             fitJs:    read('@xterm', 'addon-fit', 'lib', 'addon-fit.js'),
+            webglJs:  read('@xterm', 'addon-webgl', 'lib', 'addon-webgl.js'),
         };
     }
     return cachedAssets;
@@ -150,7 +151,7 @@ function attachTerminalToPanel(
 ): void {
     const shell = getShellConfig();
 
-    let assets: { xtermJs: string; xtermCss: string; fitJs: string };
+    let assets: { xtermJs: string; xtermCss: string; fitJs: string; webglJs: string };
     try {
         assets = loadAssets(context.extensionPath);
     } catch (err) {
@@ -273,7 +274,7 @@ function attachTerminalToPanel(
 // webview resource-loading / CSP issues entirely.
 // ---------------------------------------------------------------------------
 
-function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: string }, autoCopy: boolean, cursorStyle: string, cursorBlink: boolean): string {
+function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: string; webglJs: string }, autoCopy: boolean, cursorStyle: string, cursorBlink: boolean): string {
     const nonce = generateNonce();
 
     return `<!DOCTYPE html>
@@ -282,7 +283,7 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'none';
-                 script-src 'nonce-${nonce}';
+                 script-src 'nonce-${nonce}' 'unsafe-eval';
                  style-src 'unsafe-inline';
                  worker-src blob:;">
   <style>${assets.xtermCss}</style>
@@ -301,6 +302,7 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
 
   <script nonce="${nonce}">${assets.xtermJs}</script>
   <script nonce="${nonce}">${assets.fitJs}</script>
+  <script nonce="${nonce}">${assets.webglJs}</script>
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     const container = document.getElementById('terminal-container');
@@ -339,6 +341,19 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
     term.open(container);
+
+    // Enable GPU-accelerated rendering via WebGL for faster text output.
+    // Falls back to canvas renderer if WebGL is unavailable.
+    try {
+      const webglAddon = new WebglAddon.WebglAddon();
+      webglAddon.onContextLoss(() => {
+        console.warn('[MiraTerminal] WebGL context lost, falling back to canvas');
+        webglAddon.dispose();
+      });
+      term.loadAddon(webglAddon);
+    } catch (e) {
+      console.warn('[MiraTerminal] WebGL not available, using canvas:', e);
+    }
 
     function fitAndNotify() {
       try {
