@@ -311,7 +311,7 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
       cursorBlink: ${cursorBlink},
       cursorStyle: '${cursorStyle}',
       fontSize: 14,
-      fontFamily: 'Consolas, "Courier New", monospace',
+      fontFamily: '"Cascadia Code", "Ubuntu Mono", "DejaVu Sans Mono", Consolas, monospace, "Courier New"',
       theme: {
         background:          '#1e1e1e',
         foreground:          '#cccccc',

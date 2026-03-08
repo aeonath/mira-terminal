@@ -2,7 +2,7 @@
   "name": "mira-terminal",
   "displayName": "Mira Terminal",
   "description": "Clean tabbed terminal for running Claude Code or whatever.",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "publisher": "miranovastudios",
   "engines": {
     "vscode": "^1.96.0"
@@ -102,7 +102,10 @@
     "compile": "npx tsc -p ./",
     "watch": "npx tsc -watch -p ./",
     "build": "npm install && npm run compile && npx vsce package",
-    "package": "npm run compile && npx vsce package"
+    "package": "npm run compile && npx vsce package",
+    "package:linux": "node scripts/build-target.js linux-x64",
+    "package:windows": "node scripts/build-target.js win32-x64",
+    "package:all": "npm run package:linux && npm run package:windows"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
