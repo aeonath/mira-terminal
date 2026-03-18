@@ -2,7 +2,7 @@
   "name": "mira-terminal",
   "displayName": "Mira Terminal",
   "description": "Clean tabbed terminal for running Claude Code or whatever.",
-  "version": "0.2.8",
+  "version": "0.3.0",
   "publisher": "miranovastudios",
   "engines": {
     "vscode": "^1.96.0"

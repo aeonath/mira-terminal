@@ -173,7 +173,6 @@ function attachTerminalToPanel(
     const cursorBlink = vscode.workspace
         .getConfiguration('mira-terminal')
         .get<boolean>('cursorBlink', false);
-
     panel.title = shellName;
     panel.iconPath = new vscode.ThemeIcon('terminal');
 
@@ -181,12 +180,24 @@ function attachTerminalToPanel(
     let spawnArgs = [...shell.args];
     const extraEnv: Record<string, string> = {};
 
-    if (showCwd) {
-        if (shellName === 'bash') {
-            extraEnv['PROMPT_COMMAND'] = 'printf "\\033]7;file://localhost%s\\007" "$PWD"';
-        } else if (shellName === 'powershell' || shellName === 'pwsh') {
-            spawnArgs = ['-NoLogo', '-NoExit', '-Command', PWSH_PROMPT_SETUP];
-        }
+    if (shellName === 'bash') {
+        // Write a tiny rcfile that sources the user's .bashrc then installs
+        // a PROMPT_COMMAND and INT trap to reset terminal state.  This fixes
+        // arrow keys (and other escape sequences) after Ctrl+C kills a child
+        // process that left the PTY in raw mode.
+        const cwdSnippet = showCwd
+            ? '; printf "\\033]7;file://localhost%s\\007" "$PWD"'
+            : '';
+        const rcPath = path.join(os.tmpdir(), `mira-bash-init-${process.pid}-${Date.now()}.sh`);
+        fs.writeFileSync(rcPath, [
+            '[ -f ~/.bashrc ] && . ~/.bashrc',
+            `PROMPT_COMMAND='stty sane 2>/dev/null${cwdSnippet}'`,
+            "trap 'stty sane 2>/dev/null' INT",
+            `command rm -f '${rcPath}'`,
+        ].join('\n') + '\n');
+        spawnArgs = ['--rcfile', rcPath];
+    } else if ((shellName === 'powershell' || shellName === 'pwsh') && showCwd) {
+        spawnArgs = ['-NoLogo', '-NoExit', '-Command', PWSH_PROMPT_SETUP];
     }
 
     const startCwd = resolveSavedCwd(savedCwd);
@@ -247,6 +258,12 @@ function attachTerminalToPanel(
     panel.webview.onDidReceiveMessage((msg: { type: string; data?: string; cols?: number; rows?: number }) => {
         if (msg.type === 'input' && msg.data !== undefined) {
             ptyProcess.write(msg.data);
+            // Send a carriage return after Ctrl+C to force bash to
+            // redraw the prompt, which triggers PROMPT_COMMAND and
+            // restores sane terminal state (stty sane).
+            if (msg.data === '\x03') {
+                setTimeout(() => ptyProcess.write('\r'), 20);
+            }
         } else if (msg.type === 'resize' && msg.cols !== undefined && msg.rows !== undefined) {
             ptyProcess.resize(msg.cols, msg.rows);
         }
@@ -371,6 +388,19 @@ function buildWebviewHtml(assets: { xtermJs: string; xtermCss: string; fitJs: st
 
     // Key input → PTY
     term.onData(data => vscode.postMessage({ type: 'input', data }));
+
+    // Middle-click paste
+    container.addEventListener('auxclick', (e) => {
+      if (e.button === 1) { e.preventDefault(); }
+    });
+    container.addEventListener('mousedown', (e) => {
+      if (e.button === 1) {
+        e.preventDefault();
+        navigator.clipboard.readText().then(text => {
+          if (text) { vscode.postMessage({ type: 'input', data: text }); }
+        }).catch(() => {});
+      }
+    });
 
     // Auto-copy selection to clipboard
     if (${autoCopy}) {
